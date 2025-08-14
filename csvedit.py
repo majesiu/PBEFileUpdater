@@ -46,7 +46,7 @@ def updatePitcher(player, row, header):
     velocity = re.search(r"Velocity: (?P<Velocity>\d{2,3} - \d{2,3}|\d{3}\+)",row[1])
     player[65] = VelocityConverter[velocity.group('Velocity').strip()]
     player[156] = VelocityConverter[velocity.group('Velocity').strip()]
-    print("Velocity:", velocity.group('Velocity').strip(), "Converted:", player[65])
+    # print("Velocity:", velocity.group('Velocity').strip(), "Converted:", player[65])
     player[53] = TPEconverter[pitchingattrs.group('MovesvsL')]
     player[55] = TPEconverter[pitchingattrs.group('MovesvsR')]
     player[57] = TPEconverter[max(pitchingattrs.group('MovesvsL'), pitchingattrs.group('MovesvsR'))]
@@ -59,8 +59,9 @@ def updatePitcher(player, row, header):
     player[62] = int(pitchingattrs.group('Stamina'))*2
     player[63] = int(pitchingattrs.group('Hold'))*2
     player[64] = pitchingattrs.group('GB')
-    #set stuff to 0 for proper calcs
-    player[122] = 0
+    #set stuff to empty for proper calcs, max stuff potential
+    player[122] = ""
+    player[124] = 600
     #set L/R split to 1
     player[123] = 1
     fastball = re.search(r"Fastball: (?P<Fastball>\d{2,3})",row[1])
@@ -112,7 +113,7 @@ def updatePitcher(player, row, header):
 
 
         
-with open('mpbe_rosters.csv', newline='', encoding="cp437") as ootpcsvfile:
+with open('mpbe_rostersw4.csv', newline='', encoding="cp437") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
@@ -135,7 +136,7 @@ with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
                     battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
                     fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
                     if(header.group('playername') in players):
-                        print(header.group('playername'), header.group('position'))
+                        # print(header.group('playername'), header.group('position'))
                         player = players.pop(header.group('playername'))
                         updateBatter(player, battingattrs, fieldingattrs, header)
                         processedBatters += 1
@@ -143,7 +144,7 @@ with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
                     #     print("Batter not found in players dictionary:", header.group('playername')," - ", header.group('position'))
                 else:
                     if(header.group('playername') in players):
-                        print(header.group('playername'), header.group('position'))
+                        # print(header.group('playername'), header.group('position'))
                         player = players.pop(header.group('playername'))
                         updatePitcher(player, row, header)
                         processedPitchers += 1
@@ -166,7 +167,7 @@ with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_mlpbe.csv', 'w'
 players = dict()
 
         
-with open('pbe_rosters6.csv', newline='', encoding="cp437") as ootpcsvfile:
+with open('pbe_rostersw4.csv', newline='', encoding="cp437") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
@@ -180,6 +181,7 @@ with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
     dbpostdumb = csv.reader(dbcsvfile, delimiter=',', quotechar='"')
     counter = 0
     processedBatters = 0
+    processedPitchers = 0
     for row in dbpostdumb:
         if(counter != 0):
             header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0])
@@ -188,14 +190,15 @@ with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
                     battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
                     fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
                     if(header.group('playername') in players):
-                        print(header.group('playername'), header.group('position'))
+                        # print(header.group('playername'), header.group('position'))
+                        player = players.pop(header.group('playername'))
                         updateBatter(player, battingattrs, fieldingattrs, header)
                         processedBatters += 1
                     # else:
                     #     print("Batter not found in players dictionary:", header.group('playername')," - ", header.group('position'))
                 else:
                     if(header.group('playername') in players):
-                        print(header.group('playername'), header.group('position'))
+                        # print(header.group('playername'), header.group('position'))
                         player = players.pop(header.group('playername'))
                         updatePitcher(player, row, header)
                         processedPitchers += 1
