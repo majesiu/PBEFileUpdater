@@ -41,7 +41,7 @@ def updateBatter(player, battingattrs, fieldingattrs, header):
     player[71] = int(fieldingattrs.group('CAB'))*2
     #temporary framing
     player[155] = int(fieldingattrs.group('CAB'))*2
-    players[header.group('playername')] = player
+    players[header.group('playername').lower().strip()] = player
 
 def updatePitcher(player, row, header):
     pitchingattrs = re.search(r"Movement vs.? LHB: (?P<MovesvsL>\d{2,3}).*Movement vs.? RHB: (?P<MovesvsR>\d{2,3}).*Control vs.? LHB: (?P<ControlvsL>\d{2,3}).*Control vs.? RHB: (?P<ControlvsR>\d{2,3}).*Stamina: (?P<Stamina>\d{2,3}).*Holding Runners: (?P<Hold>\d{2,3}).*GB%: (?P<GB>\d{2})",row[1],re.S)
@@ -62,10 +62,10 @@ def updatePitcher(player, row, header):
     player[63] = int(pitchingattrs.group('Hold'))*2
     player[64] = pitchingattrs.group('GB')
     #set stuff to empty for proper calcs, max stuff potential
-    player[122] = ""
-    player[124] = 600
+    player[122] = None
+    player[124] = None
     #set L/R split to 1
-    player[123] = 1
+    player[123] = 1.000
     fastball = re.search(r"Fastball: (?P<Fastball>\d{2,3})",row[1])
     if fastball != None:
         player[125] = TPEconverter[fastball.group('Fastball')]
@@ -110,55 +110,55 @@ def updatePitcher(player, row, header):
     if knucklecurve != None:
         player[135] = TPEconverter[knucklecurve.group('Knucklecurve')]
         player[147] = TPEconverter[knucklecurve.group('Knucklecurve')]
-    players[header.group('playername')] = player
+    players[header.group('playername').lower().strip()] = player
 
 
 
         
-with open('mpbe_rostersw4.csv', newline='', encoding="cp437") as ootpcsvfile:
+with open('mpbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
         if(not row[0].startswith("//")):
-            key = row[6]+" "+row[5]
+            key = (row[6]+" "+row[5]).lower().strip()
             players[key] = row
             counter += 1
     print("Players loaded: ", counter)  
 
-with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
+with open('roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
     dbpostdumb = csv.reader(dbcsvfile, delimiter=',', quotechar='"')
     counter = 0
     processedBatters = 0
     processedPitchers = 0
     for row in dbpostdumb:
         if(counter != 0):
-            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0])
+            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0], re.IGNORECASE)
             if(header != None):
-                if(header.group('position') != 'SP' and header.group('position') != 'RP'):
+                if(header.group('position') != "SP" and header.group('position') != "RP"):
                     battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
                     fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
-                    if(header.group('playername') in players):
+                    if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
-                        updateBatter(player, battingattrs, fieldingattrs, header)
+                        player = players.pop(header.group('playername').lower().strip())
+                        updateBatter(player, battingattrs, fieldingattrs, header)    
                         processedBatters += 1
-                    # else:
-                    #     print("Batter not found in players dictionary:", header.group('playername')," - ", header.group('position'))
+                    else:
+                        print("Batter not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
                 else:
-                    if(header.group('playername') in players):
+                    if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
+                        player = players.pop(header.group('playername').lower().strip())
                         updatePitcher(player, row, header)
                         processedPitchers += 1
-            #         else:
-            #             print("Pitcher not found in players dictionary:", header.group('playername')," - ", header.group('position'))
+                    else:
+                        print("Pitcher not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
 
-            # else:
-            #     print("Header not found in row:", row[0])
+            else:
+                print("Wrong player thread title: " ,row[0])
         counter += 1
     print("Processed Players: ", counter, " - Processed batters:", processedBatters, " - Processed pitchers:", processedPitchers)
 
-with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_mlpbe.csv', 'w', newline='', encoding="cp437") as outputcsvfile:
+with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_mlpbe.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
     writer = csv.writer(outputcsvfile, delimiter=',', quotechar='"')
     for player in players.values():
         writer.writerow(player)
@@ -170,50 +170,50 @@ players = dict()
 print(players)
 
         
-with open('pbe_rostersw4.csv', newline='', encoding="cp437") as ootpcsvfile:
+with open('pbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
         if(not row[0].startswith("//")):
-            key = row[6]+" "+row[5]
+            key = (row[6]+" "+row[5]).lower().strip()
             players[key] = row
             counter += 1
     print("Players loaded: ", counter)  
 
-with open('roster_pages.csv', newline='', encoding="cp437") as dbcsvfile:
+with open('roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
     dbpostdumb = csv.reader(dbcsvfile, delimiter=',', quotechar='"')
     counter = 0
     processedBatters = 0
     processedPitchers = 0
     for row in dbpostdumb:
         if(counter != 0):
-            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0])
+            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0], re.IGNORECASE)
             if(header != None):
-                if(header.group('position') != 'SP' and header.group('position') != 'RP'):
+                if(header.group('position') != "SP" and header.group('position') != "RP"):
                     battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
                     fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
-                    if(header.group('playername') in players):
+                    if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
-                        updateBatter(player, battingattrs, fieldingattrs, header)
+                        player = players.pop(header.group('playername').lower().strip())
+                        updateBatter(player, battingattrs, fieldingattrs, header)    
                         processedBatters += 1
-                    # else:
-                    #     print("Batter not found in players dictionary:", header.group('playername')," - ", header.group('position'))
+                    else:
+                        print("Batter not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
                 else:
-                    if(header.group('playername') in players):
+                    if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
+                        player = players.pop(header.group('playername').lower().strip())
                         updatePitcher(player, row, header)
                         processedPitchers += 1
-            #         else:
-            #             print("Pitcher not found in players dictionary:", header.group('playername')," - ", header.group('position'))
+                    else:
+                        print("Pitcher not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
 
-            # else:
-            #     print("Header not found in row:", row[0])
+            else:
+                print("Wrong player thread title: " ,row[0])
         counter += 1
     print("Processed Players: ", counter, " - Processed batters:", processedBatters, " - Processed pitchers:", processedPitchers)
 
-with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_pbe.csv', 'w', newline='', encoding="cp437") as outputcsvfile:
+with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_pbe.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
     writer = csv.writer(outputcsvfile, delimiter=',', quotechar='"')
     for player in players.values():
         writer.writerow(player)

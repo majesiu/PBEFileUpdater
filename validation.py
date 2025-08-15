@@ -158,7 +158,7 @@ with open('pbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     counter = 0
     for row in ootpdump:
         if(not row[0].startswith("//")):
-            key = row[6].strip()+" "+row[5].strip()
+            key = (row[6]+" "+row[5]).lower().strip()
             players[key] = row
             counter += 1
     print("Loaded", counter, "players from pbe_rosters.csv")
@@ -169,7 +169,7 @@ with open('mpbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     counter = 0
     for row in ootpdump:
         if(not row[0].startswith("//")):
-            key = row[6].strip()+" "+row[5].strip()
+            key = (row[6]+" "+row[5]).lower().strip()
             players[key] = row
             counter += 1
     print("Loaded", counter, "players from mpbe_rosters.csv")
@@ -180,31 +180,30 @@ with open('roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
     processedBatters = 0
     processedPitchers = 0
     for row in dbpostdumb:
-        # print(header.group('playername'), header.group('position'),"Processing row:", counter)
         if(counter != 0):
-            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0])
+            header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0], re.IGNORECASE)
             if(header != None):
                 if(header.group('position') != "SP" and header.group('position') != "RP"):
                     battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
                     fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
-                    if(header.group('playername') in players):
+                    if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
-                        # parseBatter(player, battingattrs, fieldingattrs, header)    
+                        player = players.pop(header.group('playername').lower().strip())
+                        parseBatter(player, battingattrs, fieldingattrs, header)    
                         processedBatters += 1
-                    # else:
-                    #     print("Batter not found in players dictionary:", header.group('playername')," - ", header.group('position'))
-                else:
-                    if(header.group('playername') in players):
-                        # print(header.group('playername'), header.group('position'))
-                        player = players.pop(header.group('playername'))
-                        parsePitcher(player, row, header)
-                        processedPitchers += 1
-            #         else:
-            #             print("Pitcher not found in players dictionary:", header.group('playername')," - ", header.group('position'))
+                    else:
+                        print("Batter not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
+                # else:
+                #     if(header.group('playername').lower().strip() in players):
+                #         # print(header.group('playername'), header.group('position'))
+                #         player = players.pop(header.group('playername').lower().strip())
+                #         parsePitcher(player, row, header)
+                #         processedPitchers += 1
+                #     else:
+                        print("Pitcher not found in players dictionary:", header.group('playername').encode("utf-8")," - ", header.group('position'), " | ", row[0].encode("utf-8"))
 
-            # else:
-            #     print("Header not found in row:", row[0])
+            else:
+                print("Wrong player thread title: " ,row[0])
         counter += 1
     print("Processed Players: ", counter, " - Processed batters:", processedBatters, " - Processed pitchers:", processedPitchers)
         
