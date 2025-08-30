@@ -37,14 +37,19 @@ def updateBatter(player, battingattrs, fieldingattrs, header):
     player[75] = int(fieldingattrs.group('Arm'))*2
     player[72] = int(fieldingattrs.group('Arm'))*2
     player[70] = int(fieldingattrs.group('DP'))*2
-    player[71] = int(fieldingattrs.group('CAB'))*2
-    #temporary framing
-    player[155] = int(fieldingattrs.group('CAB'))*2
+    if (fieldingattrs.group('CAB') != None):
+        player[71] = int(fieldingattrs.group('CAB'))*2
+    else:
+        player[71] = int(fieldingattrs.group('CABL'))*2
+    if (fieldingattrs.group('CAF') != None):
+        player[155] = int(fieldingattrs.group('CAF'))*2
     players[header.group('playername').lower().strip()] = player
 
 def updatePitcher(player, row, header):
     pitchingattrs = re.search(r"Movement vs.? LHB: (?P<MovesvsL>\d{2,3}).*Movement vs.? RHB: (?P<MovesvsR>\d{2,3}).*Control vs.? LHB: (?P<ControlvsL>\d{2,3}).*Control vs.? RHB: (?P<ControlvsR>\d{2,3}).*Stamina: (?P<Stamina>\d{2,3}).*Holding Runners: (?P<Hold>\d{2,3}).*GB%: (?P<GB>\d{2})",row[1],re.S)
     velocity = re.search(r"Velocity: (?P<Velocity>\d{2,3} - \d{2,3}|\d{3}\+)",row[1])
+    pBABIP = re.search(r"pBABIP: (?P<pBABIP>\d{2,3})",row[1])
+    
     player[65] = VelocityConverter[velocity.group('Velocity').strip()]
     player[156] = VelocityConverter[velocity.group('Velocity').strip()]
     # print("Velocity:", velocity.group('Velocity').strip(), "Converted:", player[65])
@@ -56,7 +61,10 @@ def updatePitcher(player, row, header):
     player[58] = TPEconverter[max(pitchingattrs.group('ControlvsL'), pitchingattrs.group('ControlvsR'))]
     # player[150] = TPEconverter[pitchingattrs.group('pbabip')]
     #pbabip set to 120 for all pitchers for now
-    player[150] = 120
+    if (pBABIP != None):
+        player[150] = int(pBABIP.group('pBABIP'))
+    else:
+        player[150] = 120
     player[62] = int(pitchingattrs.group('Stamina'))*2
     player[63] = int(pitchingattrs.group('Hold'))*2
     player[64] = pitchingattrs.group('GB')
@@ -114,7 +122,7 @@ def updatePitcher(player, row, header):
 
 
         
-with open('./roster/mpbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
+with open('./rosters/milpbe_rosters.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
@@ -124,7 +132,7 @@ with open('./roster/mpbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcs
             counter += 1
     print("Players loaded: ", counter)  
 
-with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
+with open('./rosters/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
     dbpostdumb = csv.reader(dbcsvfile, delimiter=',', quotechar='"')
     counter = 0
     processedBatters = 0
@@ -134,8 +142,8 @@ with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfil
             header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0], re.IGNORECASE)
             if(header != None):
                 if(header.group('position') != "SP" and header.group('position') != "RP"):
-                    battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
-                    fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
+                    battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed(.*): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S|re.I)
+                    fieldingattrs = re.search(r"Fielding range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*(Catcher Ability: (?P<CAB>\d{1,3})|Catcher Blocking: (?P<CABL>\d{2,3}).*Catcher Framing: (?P<CAF>\d{2,3}))",row[1],re.S|re.I)
                     if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
                         player = players.pop(header.group('playername').lower().strip())
@@ -157,7 +165,7 @@ with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfil
         counter += 1
     print("Processed Players: ", counter, " - Processed batters:", processedBatters, " - Processed pitchers:", processedPitchers)
 
-with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_mlpbe.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
+with open('./import/importMiLPBE.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
     writer = csv.writer(outputcsvfile, delimiter=',', quotechar='"')
     for player in players.values():
         writer.writerow(player)
@@ -168,7 +176,7 @@ with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_mlpbe.csv', 'w'
 players = dict()
 
         
-with open('./roster/pbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsvfile:
+with open('./rosters/pbe_rosters.csv', newline='', encoding="UTF-8") as ootpcsvfile:
     ootpdump = csv.reader(ootpcsvfile, delimiter=',', quotechar='"')
     counter = 0
     for row in ootpdump:
@@ -178,7 +186,7 @@ with open('./roster/pbe_rostersw4.csv', newline='', encoding="UTF-8") as ootpcsv
             counter += 1
     print("Players loaded: ", counter)  
 
-with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
+with open('./rosters/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfile:
     dbpostdumb = csv.reader(dbcsvfile, delimiter=',', quotechar='"')
     counter = 0
     processedBatters = 0
@@ -188,8 +196,8 @@ with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfil
             header = re.search(r'] (?P<playername>.*) - (?P<position>\w{1,2})',row[0], re.IGNORECASE)
             if(header != None):
                 if(header.group('position') != "SP" and header.group('position') != "RP"):
-                    battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: (?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed \(Base & Run\): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S)
-                    fieldingattrs = re.search(r"Fielding Range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*Catcher Ability: (?P<CAB>\d{2,3})",row[1],re.S)
+                    battingattrs = re.search(r"BABIP vs LHP: (?P<BABIPvsL>\d{2,3}).*BABIP vs RHP: (?P<BABIPvsR>\d{2,3}).*Avoid K's vs LHP: (?P<AvoidvsL>\d{2,3}).*Avoid K's vs RHP: .*(?P<AvoidvsR>\d{2,3}).*Gap vs LHP: (?P<GapvsL>\d{2,3}).*Gap vs RHP: (?P<GapvsR>\d{2,3}).*Power vs LHP: (?P<PowervsL>\d{2,3}).*Power vs RHP: (?P<PowervsR>\d{2,3}).*Eye\/Patience vs LHP: (?P<EyevsL>\d{2,3}).*Eye\/Patience vs RHP: (?P<EyevsR>\d{2,3}).*Speed(.*): (?P<Speed>\d{2,3}).*Stealing Ability: (?P<Stealing>\d{2,3})",row[1],re.S|re.I)
+                    fieldingattrs = re.search(r"Fielding range: (?P<Range>\d{2,3}).*Fielding Error: (?P<Error>\d{2,3}).*Fielding/Catching Arm: (?P<Arm>\d{2,3}).*Turn Double Play: (?P<DP>\d{2,3}).*(Catcher Ability: (?P<CAB>\d{1,3})|Catcher Blocking: (?P<CABL>\d{2,3}).*Catcher Framing: (?P<CAF>\d{2,3}))",row[1],re.S|re.I)
                     if(header.group('playername').lower().strip() in players):
                         # print(header.group('playername'), header.group('position'))
                         player = players.pop(header.group('playername').lower().strip())
@@ -211,7 +219,7 @@ with open('./roster/roster_pages.csv', newline='', encoding="UTF-8") as dbcsvfil
         counter += 1
     print("Processed Players: ", counter, " - Processed batters:", processedBatters, " - Processed pitchers:", processedPitchers)
 
-with open(r'C:\\Users\\sutem\\Downloads\\Expos\\modified_rooster_pbe.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
+with open('./import/importPBE.csv', 'w', newline='', encoding="UTF-8") as outputcsvfile:
     writer = csv.writer(outputcsvfile, delimiter=',', quotechar='"')
     for player in players.values():
         writer.writerow(player)
